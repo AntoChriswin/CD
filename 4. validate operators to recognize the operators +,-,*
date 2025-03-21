@@ -1,0 +1,22 @@
+#include <stdio.h>
+#include <string.h>
+
+int isOperator(char c) {
+    return (c == '+' || c == '-' || c == '*' || c == '/');
+}
+
+void lex(char *c) {
+    int i = 0;
+    while (c[i] != '\0') {
+        if (isOperator(c[i])) {
+            printf("Operator: %c\n", c[i]);
+        }
+        i++;
+    }
+}
+
+int main() {
+    char c[] = "-z/a*b*c";
+    lex(c);
+    return 0;
+}
