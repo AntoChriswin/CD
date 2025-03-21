@@ -1,0 +1,407 @@
+#1 Develop a lexical Analyzer to identify identifiers, constants, operators using C program.
+Code:
+#include <stdio.h>
+#include <ctype.h>
+#include <string.h>
+
+#define MAX_LEN 100
+
+void identifyToken(char *token) {
+    if (isalpha(token[0])) {
+        printf("Identifier: %s\n", token);
+    } else if (isdigit(token[0])) {
+        printf("Constant: %s\n", token);
+    } else {
+        printf("Operator: %s\n", token);
+    }
+}
+
+int main() {
+    char input[MAX_LEN];
+    printf("Enter a string: ");
+    fgets(input, MAX_LEN, stdin);
+
+    char *token = strtok(input, " \n");
+    while (token != NULL) {
+        identifyToken(token);
+        token = strtok(NULL, " \n");
+    }
+
+    return 0;
+}
+
+#2 Develop a lexical Analyzer to identify whether a given line is a comment or not using C
+Code:
+#include <stdio.h>
+#include <string.h>
+#include <stdbool.h>
+bool isComment(const char *line) {
+    while (*line == ' ' || *line == '\t') {
+        line++;
+    }
+    if (strncmp(line, "//", 2) == 0) {
+        return true;
+    }
+    if (strncmp(line, "/*", 2) == 0) {
+        return true;
+    }
+    return false;
+}
+int main() {
+    char line[256];
+
+    printf("Enter a line of code: ");
+    fgets(line, sizeof(line), stdin);
+
+    if (isComment(line)) {
+        printf("The line is a comment.\n");
+    } else {
+        printf("The line is not a comment.\n");
+    }
+
+    return 0;
+}
+
+#3 Design a lexical Analyzer for given language should ignore the redundant spaces, tabs and new lines and ignore comments using C
+Code:
+#include <stdio.h>
+#include <ctype.h>
+#include <string.h>
+void lex(char *c) {
+    int i = 0;
+    while (c[i] != '\0') {
+        if (isspace(c[i])) {
+            i++;
+            continue;
+        }
+        if (c[i] == '/' && c[i + 1] == '/') {
+            while (c[i] != '\0' && c[i] != '\n') i++;
+        } else if (c[i] == '/' && c[i + 1] == '*') {
+            i += 2;
+            while (c[i] != '\0' && !(c[i] == '*' && c[i + 1] == '/')) i++;
+            if (c[i] != '\0') i += 2;
+        } else {
+            putchar(c[i++]);
+        }
+    }
+}
+int main() {
+    char c[] = "  int a = 50;  // this is a comment\n  /* multi-line \n  comment */  b = 100; ";
+    lex(c);
+    return 0;
+}
+
+#4 Design a lexical Analyzer to validate operators to recognize the operators +,-,*,/ using regular arithmetic operators using C
+Code:
+#include <stdio.h>
+#include <string.h>
+
+int isOperator(char c) {
+    return (c == '+' || c == '-' || c == '*' || c == '/');
+}
+
+void lex(char *c) {
+    int i = 0;
+    while (c[i] != '\0') {
+        if (isOperator(c[i])) {
+            printf("Operator: %c\n", c[i]);
+        }
+        i++;
+    }
+}
+
+int main() {
+    char c[] = "-z/a*b*c";
+    lex(c);
+    return 0;
+}
+
+#5 Design a lexical Analyzer to find the number of whitespaces and newline characters using C.
+Code:
+#include <stdio.h>
+
+void countWhite(char *c) {
+    int spaces = 0, newlines = 0, i = 0;
+    while (c[i] != '\0') {
+        if (c[i] == ' ') spaces++;
+        else if (c[i] == '\n') newlines++;
+        i++;
+    }
+    printf("Spaces: %d\nNewlines: %d\n", spaces, newlines);
+}
+
+int main() {
+    char c[] = "I'm Anto Chriswin.\nI love peace.  ";
+    countWhite(c);
+    return 0;
+}
+
+#6 Develop a lexical Analyzer to test whether a given identifier is valid or not using C.
+Code:
+#include <stdio.h>
+#include <ctype.h>
+#include <string.h>
+const char *keywords[] = {
+    "auto", "break", "case", "char", "const", "continue", "default", "do",
+    "double", "else", "enum", "extern", "float", "for", "goto", "if",
+    "inline", "int", "long", "register", "restrict", "return", "short",
+    "signed", "sizeof", "static", "struct", "switch", "typedef", "union",
+    "unsigned", "void", "volatile", "while", "_Alignas", "_Alignof",
+    "_Atomic", "_Bool", "_Complex", "_Generic", "_Imaginary", "_Noreturn",
+    "_Static_assert", "_Thread_local"
+};
+int keywordCount = sizeof(keywords) / sizeof(keywords[0]);
+int isKeyword(char *word) {
+    for (int i = 0; i < keywordCount; i++) {
+        if (strcmp(word, keywords[i]) == 0) {
+            return 1;
+        }
+    }
+    return 0;
+}
+int isValidIdentifier(char *str) {
+    if (!isalpha(str[0]) && str[0] != '_') {
+        return 0;
+    }
+    for (int i = 1; str[i] != '\0'; i++) {
+        if (!isalnum(str[i]) && str[i] != '_') {
+            return 0;
+        }
+    }
+    if (isKeyword(str)) {
+        return 0;
+    }
+    return 1; 
+}
+
+int main() {
+    char identifier[100];
+
+    printf("Enter an identifier: ");
+    scanf("%s", identifier);
+
+    if (isValidIdentifier(identifier)) {
+        printf("Valid identifier\n");
+    } else {
+        printf("Invalid identifier\n");
+    }
+    return 0;
+}
+
+#7 Write a C program to find FIRST( ) - predictive parser for the given grammar
+#include <stdio.h>
+#include <string.h>
+#include <ctype.h>
+
+#define MAX_RULES 10
+#define MAX_LEN 10
+
+char grammar[MAX_RULES][MAX_LEN];
+char first[MAX_RULES][MAX_LEN];
+int n;
+
+void find_first(char c, int index) {
+    if (!isupper(c)) {
+        first[index][strlen(first[index])] = c;
+        return;
+    }
+    for (int i = 0; i < n; i++) {
+        if (grammar[i][0] == c) {
+            for (int j = 2; grammar[i][j] != '\0'; j++) {
+                find_first(grammar[i][j], index);
+                if (!isupper(grammar[i][j])) break;
+            }
+        }
+    }
+}
+
+int main() {
+    printf("Enter number of productions: ");
+    scanf("%d", &n);
+    printf("Enter productions (e.g., A=Ba):\n");
+    for (int i = 0; i < n; i++) scanf("%s", grammar[i]);
+    
+    for (int i = 0; i < n; i++) find_first(grammar[i][0], i);
+    
+    printf("\nFIRST sets:\n");
+    for (int i = 0; i < n; i++)
+        printf("FIRST(%c) = {%s}\n", grammar[i][0], first[i]);
+    
+    return 0;
+}
+
+#8 Write a C program to find FOLLOW( ) - predictive parser for the given grammar
+S → AaAb / BbBa
+A → ∈
+B → ∈
+#include <stdio.h>
+#include <string.h>
+#include <ctype.h>
+
+#define MAX 10
+
+char productions[MAX][MAX], follow[MAX][MAX];
+int prod_count;
+
+void addToSet(char *set, char val) {
+    if (strchr(set, val) == NULL) {
+        int len = strlen(set);
+        set[len] = val;
+        set[len + 1] = '\0';
+    }
+}
+
+void computeFollow(char non_terminal, char *res) {
+    if (productions[0][0] == non_terminal) 
+        addToSet(res, '$');  // Rule 1: FOLLOW(S) = { $ }
+
+    for (int i = 0; i < prod_count; i++) {
+        for (int j = 2; j < strlen(productions[i]); j++) {
+            if (productions[i][j] == non_terminal) {
+                if (productions[i][j + 1] != '\0') {
+                    if (!isupper(productions[i][j + 1])) 
+                        addToSet(res, productions[i][j + 1]);  // Terminal follows directly
+                    else {
+                        if (productions[i][j + 1] == 'A' || productions[i][j + 1] == 'B') 
+                            computeFollow(productions[i][0], res);
+                    }
+                } else {
+                    computeFollow(productions[i][0], res);  // Inherit FOLLOW from LHS
+                }
+            }
+        }
+    }
+}
+
+int main() {
+    printf("Enter number of productions: ");
+    scanf("%d", &prod_count);
+    
+    printf("Enter productions (e.g., S=AaAb | BbBa):\n");
+    for (int i = 0; i < prod_count; i++) 
+        scanf("%s", productions[i]);
+
+    for (int i = 0; i < prod_count; i++) {
+        follow[i][0] = '\0';
+        computeFollow(productions[i][0], follow[i]);
+    }
+
+    printf("\nFOLLOW sets:\n");
+    for (int i = 0; i < prod_count; i++) 
+        printf("FOLLOW(%c) = {%s}\n", productions[i][0], follow[i]);
+
+    return 0;
+}
+
+#9 Implement a C program to eliminate left recursion from a given CFG.
+#include <stdio.h>
+#include <string.h>
+
+void eliminateLeftRecursion(char *nonTerminal, char productions[][20], int n) {
+    char alpha[10][10], beta[10][10];
+    int alphaCount = 0, betaCount = 0;
+    
+    for (int i = 0; i < n; i++) {
+        if (productions[i][0] == *nonTerminal) {
+            strcpy(alpha[alphaCount++], productions[i] + 1);
+        } else {
+            strcpy(beta[betaCount++], productions[i]);
+        }
+    }
+    
+    if (alphaCount == 0) {
+        printf("No left recursion detected.\n");
+        return;
+    }
+    
+    printf("%c -> ", *nonTerminal);
+    for (int i = 0; i < betaCount; i++) {
+        printf("%s%c'", beta[i], *nonTerminal);
+        if (i < betaCount - 1) printf(" | ");
+    }
+    printf("\n%c' -> ", *nonTerminal);
+    for (int i = 0; i < alphaCount; i++) {
+        printf("%s%c'", alpha[i], *nonTerminal);
+        if (i < alphaCount - 1) printf(" | ");
+    }
+    printf(" | ε\n");
+}
+
+int main() {
+    char nonTerminal = 'A';
+    char productions[][20] = {"Aa", "b"};
+    int n = 2;
+    eliminateLeftRecursion(&nonTerminal, productions, n);
+    return 0;
+}
+
+#10. Implement a C program to eliminate left factoring from a given CFG.
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+
+#define MAX_RULES 10
+#define MAX_LENGTH 100
+
+void eliminateLeftFactoring(char rules[MAX_RULES][MAX_LENGTH], int ruleCount) {
+    for (int i = 0; i < ruleCount; i++) {
+        char *production = strstr(rules[i], "->");
+        if (!production) continue;
+
+        *production = '\0'; // Split LHS and RHS
+        char lhs[MAX_LENGTH], rhs[MAX_LENGTH];
+        strcpy(lhs, rules[i]);
+        strcpy(rhs, production + 2);
+
+        char *tokens[MAX_RULES];
+        int tokenCount = 0;
+        char *token = strtok(rhs, "|");
+        while (token) {
+            tokens[tokenCount++] = token;
+            token = strtok(NULL, "|");
+        }
+
+        int prefixLen = strlen(tokens[0]);
+        for (int j = 1; j < tokenCount; j++) {
+            int k = 0;
+            while (k < prefixLen && tokens[0][k] == tokens[j][k]) k++;
+            prefixLen = k;
+        }
+
+        if (prefixLen == 0) { // No left factoring
+            printf("%s->%s\n", lhs, rhs);
+            continue;
+        }
+
+        char prefix[MAX_LENGTH];
+        strncpy(prefix, tokens[0], prefixLen);
+        prefix[prefixLen] = '\0';
+
+        printf("%s->%s%c'\n", lhs, prefix, lhs[0]);
+        printf("%c'->", lhs[0]);
+        int first = 1;
+        for (int j = 0; j < tokenCount; j++) {
+            if (strncmp(tokens[j], prefix, prefixLen) == 0) {
+                if (!first) printf("|");
+                printf("%s", tokens[j] + prefixLen);
+                first = 0;
+            }
+        }
+        printf("\n");
+    }
+}
+
+int main() {
+    char rules[MAX_RULES][MAX_LENGTH] = {
+        "A->ab|ac|ad",
+        "B->xyz|xyw|xyt"
+    };
+    int ruleCount = 2;
+
+    printf("Grammar after removing left factoring:\n");
+    eliminateLeftFactoring(rules, ruleCount);
+
+    return 0;
+}
+
+#12. Write a C program to construct recursive descent parsing for the given grammar  
