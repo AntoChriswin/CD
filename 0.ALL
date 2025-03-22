@@ -405,3 +405,369 @@ int main() {
 }
 
 #12. Write a C program to construct recursive descent parsing for the given grammar  
+
+#13 Write a C program to implement either Top Down parsing technique or Bottom Up Parsing technique to check whether the given input string is satisfying the grammar or not.
+
+Code:
+#include<stdio.h>
+#include<stdlib.h>
+#include<string.h>
+
+char *input;
+int position = 0;
+
+void E();
+void E_prime();
+void T();
+void T_prime();
+void F();
+
+void error() {
+    printf("Parsing failed at position %d: %s\n", position, &input[position]);
+    exit(1);
+}
+
+void match(char expected) {
+    if(input[position] == expected)
+        position++;
+    else
+        error();
+}
+
+// Match "id" as a token
+void match_id() {
+    if(strncmp(&input[position], "id", 2) == 0)
+        position += 2; // Move forward by 2 (length of "id")
+    else
+        error();
+}
+
+void E() {
+    T();
+    E_prime();
+}
+
+void E_prime() {
+    if(input[position] == '+') {
+        match('+');
+        T();
+        E_prime();
+    }
+}
+
+void T() {
+    F();
+    T_prime();
+}
+
+void T_prime() {
+    if(input[position] == '*') {
+        match('*');
+        F();
+        T_prime();
+    }
+}
+
+void F() {
+    if(strncmp(&input[position], "id", 2) == 0) {
+        match_id();  // Match "id"
+    } else if(input[position] == '(') {
+        match('(');
+        E();
+        match(')');
+    } else {
+        error();
+    }
+}
+
+int main() {
+    char str[100];
+    printf("Enter an expression: ");
+    scanf("%s", str);
+    input = str;
+    
+    E();
+    
+    if(input[position] == '\0')
+        printf("Parsing successful!\n");
+    else
+        printf("Parsing failed at position %d\n", position);
+    
+    return 0;
+}
+
+#14  Implement the concept of Shift reduce parsing in C Programming.
+
+Code:
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#define MAX 100
+
+char stack[MAX];
+int top = -1;
+char input[MAX];
+int position = 0;
+
+// Push onto the stack
+void push(char symbol) {
+    stack[++top] = symbol;
+}
+
+// Pop from the stack
+void pop() {
+    top--;
+}
+
+// Display stack and input for debugging
+void display() {
+    printf("Stack: ");
+    for (int i = 0; i <= top; i++)
+        printf("%c", stack[i]);
+    printf("\t Input: %s\n", &input[position]);
+}
+
+// Try to reduce the stack contents based on grammar rules
+void reduce() {
+    while (1) {
+        // Reduction: id → E
+        if (top >= 1 && stack[top] == 'd' && stack[top - 1] == 'i') {
+            pop();
+            stack[top] = 'E'; // Replace 'i' with 'E'
+            continue;
+        }
+        
+        // Reduction: E + E → E
+        if (top >= 2 && stack[top] == 'E' && stack[top - 1] == '+' && stack[top - 2] == 'E') {
+            pop();
+            pop();
+            continue;
+        }
+
+        // Reduction: E * E → E
+        if (top >= 2 && stack[top] == 'E' && stack[top - 1] == '*' && stack[top - 2] == 'E') {
+            pop();
+            pop();
+            continue;
+        }
+
+        // Reduction: (E) → E
+        if (top >= 2 && stack[top] == ')' && stack[top - 1] == 'E' && stack[top - 2] == '(') {
+            pop();
+            pop();
+            stack[top] = 'E'; // Replace '(' with 'E'
+            continue;
+        }
+
+        break; // No further reduction possible
+    }
+}
+
+// Shift-Reduce Parsing
+void shift_reduce_parsing() {
+    printf("\nShift-Reduce Parsing Steps:\n");
+    
+    while (position < strlen(input)) {
+        push(input[position++]); // Shift
+        display();
+        reduce(); // Try to reduce
+        display();
+    }
+
+    // Final check: The stack should contain only 'E'
+    if (top == 0 && stack[top] == 'E')
+        printf("\nParsing successful!\n");
+    else
+        printf("\nParsing failed!\n");
+}
+
+int main() {
+    printf("Enter an expression: ");
+    scanf("%s", input);
+
+    shift_reduce_parsing();
+    
+    return 0;
+}
+
+#15 Write a C Program to implement the operator precedence parsing.
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <ctype.h>
+
+#define MAX 100
+
+char stack[MAX];
+int top = -1;
+char input[MAX];
+
+// Returns precedence of operators
+int precedence(char op) {
+    if (op == '*' || op == '/') return 2;
+    if (op == '+' || op == '-') return 1;
+    return 0;
+}
+
+// Stack operations
+void push(char symbol) {
+    stack[++top] = symbol;
+}
+
+char pop() {
+    return (top >= 0) ? stack[top--] : '\0';
+}
+
+char peek() {
+    return (top >= 0) ? stack[top] : '$';
+}
+
+// Check if a character is an operator
+int is_operator(char ch) {
+    return (ch == '+' || ch == '-' || ch == '*' || ch == '/');
+}
+
+// Reduce function for E op E -> E
+void reduce() {
+    while (top >= 2) {
+        if (stack[top] == 'E' && is_operator(stack[top - 1]) && stack[top - 2] == 'E') {
+            char op = stack[top - 1]; 
+            pop(); // Remove E
+            pop(); // Remove operator
+            pop(); // Remove second E
+            push('E'); // Push reduced E
+            printf("Reduce: E %c E → E\n", op);
+        } else {
+            break;
+        }
+    }
+}
+
+// Operator Precedence Parsing
+void operator_precedence_parsing() {
+    int position = 0;
+    push('$'); // Start symbol
+    printf("\nOperator Precedence Parsing Steps:\n");
+
+    while (position < strlen(input)) {
+        char current = input[position];
+
+        // Handle "id" as a single token
+        if (strncmp(&input[position], "id", 2) == 0) { 
+            printf("Shift: id\n");
+            push('E'); // Treat "id" as E
+            position += 2; 
+        } 
+        // Handle operators
+        else if (is_operator(current)) { 
+            while (is_operator(peek()) && precedence(peek()) >= precedence(current)) {
+                reduce(); 
+            }
+            printf("Shift: %c\n", current);
+            push(current);
+            position++;
+        } 
+        // Handle parentheses
+        else if (current == '(') {
+            printf("Shift: (\n");
+            push(current);
+            position++;
+        } 
+        else if (current == ')') {
+            while (peek() != '(' && top > 0) {
+                reduce();
+            }
+            if (peek() == '(') {
+                pop(); // Remove '('
+                printf("Reduce: (E) → E\n");
+            } else {
+                printf("Error: Unmatched parenthesis!\n");
+                exit(1);
+            }
+            position++;
+        } 
+        // Invalid character detected
+        else {
+            printf("Error: Invalid character detected: %c\n", current);
+            exit(1);
+        }
+    }
+
+    reduce();
+    
+    if (top == 1 && stack[top] == 'E' && stack[0] == '$') {
+        printf("\nParsing successful!\n");
+    } else {
+        printf("\nParsing failed!\n");
+    }
+}
+
+int main() {
+    printf("Enter an arithmetic expression: ");
+    scanf("%s", input);
+
+    operator_precedence_parsing();
+    
+    return 0;
+}
+
+#16 16. Write a C Program to Generate the Three address code representation for the given input statement.
+Code:
+#include <stdio.h>
+#include <string.h>
+
+int tempCount = 1;
+
+void generateTAC(char op, char arg1, char arg2, char res) {
+    printf("t%d = %c %c %c\n", tempCount++, arg1, op, arg2);
+    printf("%c = t%d\n", res, tempCount - 1);
+}
+
+int main() {
+    char input[50];
+    printf("Enter an expression (e.g., a=b+c*d): ");
+    scanf("%s", input);
+    
+    char res = input[0];
+    char arg1 = input[2];
+    char op1 = input[3];
+    char arg2 = input[4];
+    char op2 = input[5];
+    char arg3 = input[6];
+    
+    if (op2 == '*') {
+        printf("t%d = %c %c %c\n", tempCount, arg2, op2, arg3);
+        printf("t%d = %c %c t%d\n", tempCount + 1, arg1, op1, tempCount);
+        printf("%c = t%d\n", res, tempCount + 1);
+    } else {
+        printf("t%d = %c %c %c\n", tempCount, arg1, op1, arg2);
+        printf("t%d = t%d %c %c\n", tempCount + 1, tempCount, op2, arg3);
+        printf("%c = t%d\n", res, tempCount + 1);
+    }
+    
+    return 0;
+}
+
+#17 Write a C program for implementing a Lexical Analyzer to Scan and Count the number of characters, words, and lines in a file.
+Code:
+#include <stdio.h>
+#include <ctype.h>
+int main() {
+    char text[] = "Hello, this is a test.\nIt counts words, lines, and characters.\nEnjoy coding!";
+    char ch;
+    int characters = 0, words = 0, lines = 0;
+    int inWord = 0;
+    int i = 0;
+    printf("Input text:\n%s\n\n", text);
+    while ((ch = text[i++]) != '\0') {
+        characters++;
+        if (ch == '\n') lines++;
+        if (isspace(ch)) inWord = 0;
+        else if (!inWord) { words++; inWord = 1; }
+    }
+    printf("Characters: %d\nWords: %d\nLines: %d\n", characters, words, lines);
+    return 0;
+}
+
